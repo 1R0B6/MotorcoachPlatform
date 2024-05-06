@@ -9,6 +9,9 @@
 ///////////////////////////////////////ENSURE PROPER DEVICE TYPE IS SELECTED FOR BUILD
 byte device_Type = 0xF0; //0xF0 = MAIN, 1 = AUX, 2 = CAB, 3 = REAR, 4 = RPI, 5 = DEBUGGER RAW, 6 = DEBUGGER DECODED
 byte VERSION = 0x01;
+byte Debug_Message_Focus = 0xD0;
+bool Debug_Message_Focus_Active = true;
+
 
 
 #define LevelFreq 10000
@@ -23,19 +26,34 @@ byte VERSION = 0x01;
 
 //IO Definitions
   //Out
-#define Water_Pump_Out 9
-#define Level_Check 10
+    //Main
+    #define Water_Pump_Out 9
+    #define Level_Check 10
+    #define mas_ac_out 17 //needs correction
+    #define mas_fan_out 18 //needs correction
+
+    //AUX
+    #define ac_out 0
+    #define furn_out 1 
+    #define fan_out 4
+    #define sink_couch_out 12
+    #define ovh_liv_din_out 11
+    #define mast_bed_out 10
+    #define compt_lamps_out 9
+    #define bath_din_out 6
+    #define kitc_bath_out 5
 
   //In
-#define waterLevel A3
-#define greyLevel A5
-#define blackLevel A4
-#define propaneLevel A2
-#define Water_In_Inside 5
-#define Water_In_Outside 6
-#define buzzer 12
-#define level_check_in 4
-#define hot_water_In 11
+    //Main
+    #define waterLevel A3
+    #define greyLevel A5
+    #define blackLevel A4
+    #define propaneLevel A2
+    #define Water_In_Inside 5
+    #define Water_In_Outside 6
+    #define buzzer 12
+    #define level_check_in 4
+    #define hot_water_In 11
 
 /*
   #define shorePower 50
@@ -68,7 +86,7 @@ unsigned char Rxbuff[8]; //move into a function?
 unsigned char Txbuff[8];
 int messageID;
 
-//ECU Present
+//ECU Present Global
 volatile bool MAIN = false;
   byte MAIN_SW;  //Revisit
 volatile bool AUX = false;
@@ -83,6 +101,46 @@ volatile bool RPI = false;
 //I2C Periph Available
 bool ina228_avail = false;
 bool scd30_avail = false;
+
+//HVAC Global
+volatile byte Target_Temp = 22;  //Desired Temp in C. This is 22.22 C == 72F
+volatile byte Req_Temp;
+volatile float Master_Temp;
+volatile float Main_Temp;
+volatile float AUX_Main_Temp;
+volatile float Master_Hum;
+volatile float Main_Hum;
+volatile float AUX_Main_Hum;
+volatile float Master_CO2;
+volatile float Main_CO2;
+volatile float AUX_Main_CO2;
+volatile bool Master_Fan = false;
+volatile bool Main_Fan = false;
+volatile bool Aux_Main_Fan = false;
+volatile bool Master_AC = false;
+volatile byte Main_AC_Status = 0x00; //0x00 == OFF 0xAC == AC 0xF0 == FURNACE 0xFA == FAN Only  0xF1 == Furnace && Fans
+volatile byte Request_AC_Status = 0x00; //0x00 == OFF 0xAC == AC 0xF0 == FURNACE 0xFA == Fan Only  0xF1 == Furnace && Fans
+volatile byte Main_AC_Furn = 0x00;
+volatile bool Main_AC = false;
+volatile bool AUX_Main_AC = false;
+volatile bool Main_Furnace = false;
+volatile bool AUX_Main_Furnace = false;
+
+
+//Lighting Global
+int lighting_cycle = 0;
+volatile bool Sink_Couch = false;
+volatile bool AUX_Sink_Couch = false;
+volatile bool Liv_Din_Ovh  = false;
+volatile bool AUX_Liv_Din_Ovh  = false;
+volatile bool Master_Bed = false;
+volatile bool AUX_Master_Bed = false;
+volatile bool Compt_Lights = false;
+volatile bool AUX_Compt_Lights = false;
+volatile bool Bath_Din_Window = false;
+volatile bool AUX_Bath_Din_Window = false;
+volatile bool Kit_Ovh_Bath_Sink = false;
+volatile bool AUX_Kit_Ovh_Bath_Sink = false;
 
 //Water
 volatile bool Water_Pump_Active = false;
@@ -324,6 +382,24 @@ void setup() {
 		break;
 	  case 0xF1:									  //AUX ECU
 	    //Need to configure Relay Outputs here
+      pinMode(ac_out,OUTPUT);
+          digitalWrite(ac_out,LOW);
+      pinMode(furn_out,OUTPUT);
+          digitalWrite(furn_out,LOW);
+      pinMode(fan_out,OUTPUT);
+          digitalWrite(fan_out,LOW);
+      pinMode(sink_couch_out,OUTPUT);
+          digitalWrite(sink_couch_out,LOW);
+      pinMode(ovh_liv_din_out,OUTPUT);
+          digitalWrite(ovh_liv_din_out,LOW);
+      pinMode(mast_bed_out,OUTPUT);
+          digitalWrite(mast_bed_out,LOW);
+      pinMode(compt_lamps_out,OUTPUT);
+          digitalWrite(compt_lamps_out,LOW);
+      pinMode(bath_din_out,OUTPUT);
+          digitalWrite(bath_din_out,LOW);
+      pinMode(kitc_bath_out,OUTPUT);
+          digitalWrite(kitc_bath_out,LOW);
 		break;
 	  case 0xF2:									  //CAB ECU
 	    //Need to configure Relay Outputs here
@@ -357,7 +433,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("AUX Preset = "); Serial.println(AUX);
   heartbeat();
   // if(scd30_avail = true){
   //   HVAC();
@@ -371,34 +446,39 @@ void loop() {
     case 0xF0:				//MAIN ECU
 	    PollUpdates();
       WaterControl();
+      HVAC();
+      Main_HVAC();
       Main_canTX();
+      Lighting_Control();
 	  #ifdef  LIVE_VALUES
         debugPrints();
       #endif
 	  break;
-	case 0xF1:				//AUX ECU
-	  
-	  break;
-	case 0xF2:				//CAB ECU
-	  
-	  break;
-	case 0xF3:				//REAR ECU
-	  
-	  break;
-	case 0xF4:				//RPI ECU
-	  
-	  break;
-	case 0xF5:				//DEBUGGER RAW
-	  print_RAW_CAN();
-	  break;
-	case 0xF6:				//DEBUGGER DECODED
-	  decodeCAN(true);
-	  break;
-	default:
-	  Serial.println("Error in Device Address");
-	  break;
-  }
-  decodeCAN(false);
-  //canRX(); stripdown
-  delay(1000);
+    case 0xF1:				//AUX ECU
+      AUX_HVAC();
+      AUX_Lighting();
+      AUX_canTX();
+      AUX_debug();
+      delay(300);
+      break;
+    case 0xF2:				//CAB ECU
+      
+      break;
+    case 0xF3:				//REAR ECU
+      
+      break;
+    case 0xF4:				//RPI ECU
+      
+      break;
+    case 0xF5:				//DEBUGGER RAW
+      print_RAW_CAN();
+      break;
+    case 0xF6:				//DEBUGGER DECODED
+      decodeCAN(true);
+      break;
+    default:
+      Serial.println("Error in Device Address");
+      break;
+    }
+    decodeCAN(false);
 }

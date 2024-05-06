@@ -39,3 +39,30 @@ unsigned long Water_Pump_Run_Time_Total;
 
   */
 }
+
+void AUX_debug(){
+  Serial.print("T - ");
+  Serial.print(Main_Temp);
+  Serial.print(" | H - ");
+  Serial.print(Main_Hum);
+  Serial.print(" | CO2 - ");
+  Serial.print(Main_CO2);
+  Serial.print(" | Ac - ");
+  Serial.print(Main_AC);
+  Serial.print(" | Fu - ");
+  Serial.print(Main_Furnace);
+  Serial.print(" | Fan - ");
+  Serial.print(Main_Fan);
+  Serial.print(" || Sink - ");
+  Serial.print(Sink_Couch);
+  Serial.print(" | Liv Ovh - ");
+  Serial.print(Liv_Din_Ovh);
+  Serial.print(" | Master - ");
+  Serial.print(Master_Bed);
+  Serial.print(" | Compt - ");
+  Serial.print(Compt_Lights);
+  Serial.print(" | Bath - ");
+  Serial.print(Bath_Din_Window);
+  Serial.print(" | Kit Ovh - ");
+  Serial.println(Kit_Ovh_Bath_Sink);
+}

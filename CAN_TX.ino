@@ -64,52 +64,82 @@ void heartbeat(){
   }
 }
 
-void Main_canTX(){
-  #ifdef DEBUG_ACTIVE
-    Serial.print("Sending packet ... ");
-  #endif
-
-/*
+void AUX_canTX(){
   //Lighting Related
-  CAN.beginPacket(0x91);
-	  CAN.write();
-	  //CAN.write(); 
+  CAN.beginPacket(0x90);
+    CAN.write(Sink_Couch);
+    CAN.write(Liv_Din_Ovh); 
+    CAN.write(Master_Bed);
+    CAN.write(Compt_Lights);
+    CAN.write(Bath_Din_Window);
+    CAN.write(Kit_Ovh_Bath_Sink);
   CAN.endPacket();
 
   //Body Control
-  CAN.beginPacket(0xA0); //Level Values
-	  CAN.write();
-	  //CAN.write(); 
+  // CAN.beginPacket(0xA2);  //CO2 Readings
+  //   CAN.write();  //Need Main CO2 Value Here
+  // CAN.endPacket();
+
+  // CAN.beginPacket(0xA3);  //Coach Level Values
+  //   CAN.write();          //x Values Here
+  //   CAN.write();          //y Values Here
+  //   CAN.write();          //z Values Here
+  // CAN.endPacket();
+  
+  //HVAC Related
+  CAN.beginPacket(0xD1);  //Main HVAC Status
+    CAN.write(Target_Temp);  //Chance Temp Request
+    CAN.write(Request_AC_Status); //Request AC/Furnace
+    CAN.write(Main_Temp);  //Main Temp
+    CAN.write(Main_Hum);  //Main Hum
+    CAN.write(Main_CO2);  //??Main CO2??
+    CAN.write(Main_Fan);  //Main Fan On/OFF
+    CAN.write(Main_AC);  //Main A/C On/OFF
+    CAN.write(Main_Furnace);  //Main Furnace On/OFF
   CAN.endPacket();
 
-  CAN.beginPacket(0xA1); //CO2 Values
-	  CAN.write();
-	  //CAN.write(); 
+}
+
+void Main_canTX(){
+  //Lighting Related
+  CAN.beginPacket(0x91);
+    CAN.write(Sink_Couch);
+    CAN.write(Liv_Din_Ovh);
+    CAN.write(Master_Bed);
+    CAN.write(Compt_Lights);
+    CAN.write(Bath_Din_Window);
+    CAN.write(Kit_Ovh_Bath_Sink);
   CAN.endPacket();
 
-*/
+  //Body Control
+  // CAN.beginPacket(0xA0); //Level Values
+	//   CAN.write();
+	//   //CAN.write(); 
+  // CAN.endPacket();
+
+  // CAN.beginPacket(0xA1); //CO2 Values
+	//   CAN.write();
+	//   //CAN.write(); 
+  // CAN.endPacket();
+
+
   //Power Related (Gen/Shore/Inverter/Propane)
   CAN.beginPacket(0xB0);
 	  CAN.write(Propane_Level);
 	  //CAN.write(); //Generator On/Off
   CAN.endPacket();
 
-
-/*
-  
-
   // HVAC Related
   CAN.beginPacket(0xD0);
-    CAN.write(); desired temp
-    CAN.write(); Master Temp Current
-    CAN.write(); Master Humidity
-    CAN.write(); Master CO2
-    CAN.write(); MAIN FAN ON/OFF
-    CAN.write(); MAIN A/C/Furnace/Off
-    CAN.write(); Master FAN
-    CAN.write(); Master A/C
+    CAN.write(Target_Temp);
+    CAN.write(Master_Temp);
+    CAN.write(Master_Hum);
+    CAN.write(Master_CO2);
+    CAN.write(Main_Fan);
+    CAN.write(Main_AC_Furn);
+    CAN.write(Master_Fan); 
+    CAN.write(Master_AC);
   CAN.endPacket();
-*/
 
   // Water tank status
   CAN.beginPacket(0xE0);
